@@ -29,10 +29,6 @@ export function ExamGenerator() {
     console.log(`Archivo seleccionado: ${fileName}`);
     setSelectedFileName(fileName);
   }
-  function Remove() {
-      setSelectedFileName("");
-  }
-  
 
   function ValorInput(event) {
     let value = event.target.value;
@@ -107,7 +103,7 @@ export function ExamGenerator() {
         </div>
         
         <div className="contenedorCentrado">
-        <img onClick={Remove} className="CerrarImagen" src={CerrarImage}></img>
+        <img onClick={()=>setSelectedFileName("")} className="CerrarImagen" src={CerrarImage}></img>
         <span className="lineanombre">Archivo seleccionado: <br/> <b className="nombrearchivo">{selectedFileName}</b></span>
         </div>
       </div>
