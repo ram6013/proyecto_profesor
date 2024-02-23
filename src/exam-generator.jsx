@@ -9,6 +9,7 @@ import toast, { Toaster } from "react-hot-toast";
 const ACCEPT_TYPES =
   "application/pdf, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 const BASE_URL = "http://metal.engineer/api";
+
 export function ExamGenerator() {
   const [draggingCounter, setDragginCounter] = useState(0);
   const [selectedFileName, setSelectedFileName] = useState("");
@@ -17,72 +18,44 @@ export function ExamGenerator() {
   const [numeroPreguntas, setNumeroPreguntas] = useState(0);
   const [result, setResult] = useState(null);
   const [preguntas, setPreguntas] = useState();
+  const [mapaMentalVisible, setMapaMentalVisible] = useState(false);
+  const [loadingImage, setLoadingImage] = useState(false);
 
   function handleSubmit(file) {
-    // Creo los mensajes de toast
-    const noFile = () => toast.error("No has subido ningun archivo");
+    const noFile = () => toast.error("No has subido ningún archivo");
     const File = () => toast.success("Se ha subido bien el archivo...");
-    // Si no hay un archivo
     if (!file) {
-      // Muestro el error
       noFile();
-      // Salgo de la funcion
       return;
     }
 
-    // Muestro mensaje
     File();
 
-    const mypromyse =apiRequest(file);
-
-    const notify = () => toast.promise(mypromyse, {
-      loading: 'Loading',
-      success: 'Got the data',
-      error: 'Error when fetching',
-    }, {
-      position: 'bottom-center'
-    });
-    notify();
+    setLoadingImage(true);
+    apiRequest(file)
+      .then((response) => {
+        setResult(response.data);
+      })
+      .catch((error) => {
+        console.error("Error al generar la imagen:", error);
+        toast.error("Error al generar la imagen.");
+      })
+      .finally(() => {
+        setLoadingImage(false);
+      });
   }
 
   async function apiRequest(file) {
-    // Creo un formato de enviar archivo <File>filedata .dwadwdawdawd....</File>
-    const FormData = require("form-data");
-    let data = new FormData();
-    // Añadir el archivo
-    data.append("file", file);
+    const formData = new FormData();
+    formData.append("file", file);
 
-    // Configuracion de que es request "POST" que significa escondido
-    let config = {
+    const config = {
       method: "post",
-      // A donde se hace la request "Mi server en go"
       url: `${BASE_URL}/summary`,
-      // La form que acabos de crear
-      data: data,
+      data: formData,
     };
 
-    function onceItResponds(response) {
-      const positiveResponse = () => toast.success("Se ha generado todo de forma correcta") 
-      // Dentro de then teines la respuesta y aqui creas una funcion (respuesta) => {}, en la que dices que haces
-      // Una vez llegue la respuesta, esto se llama cuando el servidor responda
-      console.log(JSON.stringify(response.data));
-      console.log("Revieved response");
-      setResult(response.data);
-    }
-
-    function isThereIsAnError(err) {
-      console.log(err);
-    }
-
-    // Hago la peticion llamando a request
-    return axios
-      .request(config)
-      // Es asyncrono, es decir hay que esperar por el servidor
-      // Se añade un callback con .request().then(), porque request te devuelve una Promesa
-      // Que es un valor que llegara despues de un rato
-      .then(onceItResponds)
-      // Y esto se llama en el caso que responda con un error
-      .catch(isThereIsAnError);
+    return axios.request(config);
   }
 
   function handleCounter(increment, event) {
@@ -92,21 +65,16 @@ export function ExamGenerator() {
 
   function handleDrop(ev) {
     handleCounter(-1, ev);
-
-    console.log("File(s) dropped");
     [...ev.dataTransfer.files].forEach((file, i) => {
-      console.log(`… file[${i}].name = ${file.name}`);
       setSelectedFileName(file.name);
     });
   }
 
   function handleFileChange(event) {
-    const messageUpload = ()=> toast.success("Se ha subido bien el archivo")
     const fileName = event.target.files[0]?.name || "";
     const file = event.target.files[0];
     setFile(file);
     setSelectedFileName(fileName);
-    messageUpload( )
   }
 
   function ValorInput(event) {
@@ -127,150 +95,157 @@ export function ExamGenerator() {
   useEffect(() => {
     fetch(BASE_URL + "/template")
       .then((response) => response.json())
-      .then((res) => res)
-      .then((res) => setPreguntas(res));
+      .then((res) => setPreguntas(res))
+      .catch((error) => console.error("Error al obtener las preguntas:", error));
   }, []);
 
-    function notVisibleFile(e){
-      const delated = () => toast.success("Se ha eliminado bien el archivo...")
-      setSelectedFileName("")
-      delated();
-    }
+  function notVisibleFile(e) {
+    setSelectedFileName("");
+  }
+
+  function HandleVisibilityChange() {
+    setMapaMentalVisible(true);
+    handleSubmit(file);
+  }
+
   return (
     preguntas && (
-      <div
-        className={`exam-generator-container`}
-        onDragOver={(e) => e.preventDefault()}
-      >
+      <div className={`exam-generator-container`} onDragOver={(e) => e.preventDefault()}>
         <Toaster />
-        {!hidden && (
-          <div
-            style={{
-              backgroundColor: "rgba(0, 0, 0, 0.5)",
-              width: "100%",
-              height: "100%",
-              position: "absolute  ",
-            }}
-            onClick={() => setHidden(!hidden)}
-          >
-            <dialog
-              open
-              className="dialog"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            >
-              <h4 id="textoDialogo">¿Cuántas preguntas quieres?</h4>
-              <input
-                className="botongenerado 1"
-                type="number"
-                min={0}
-                max={15}
-                value={numeroPreguntas}
-                onChange={ValorInput}
-              ></input>
-              <div className="BotonesAlert">
-                <button
-                  className="botonesocultos CerrarD"
-                  onClick={() => setHidden(!hidden)}
-                >
-                  Cerrar
-                </button>
-                <button
-                  onClick={() => {
-                    handleSubmit(file);
+        {!mapaMentalVisible && (
+          <>
+            {!hidden && (
+              <div
+                style={{
+                  backgroundColor: "rgba(0, 0, 0, 0.5)",
+                  width: "100%",
+                  height: "100%",
+                  position: "absolute",
+                }}
+                onClick={() => setHidden(!hidden)}
+              >
+                <dialog
+                  open
+                  className="dialog"
+                  onClick={(e) => {
+                    e.stopPropagation();
                   }}
-                  className="botonesocultos Submit"
                 >
-                  submit
-                </button>
+                  <h4 id="textoDialogo">¿Cuántas preguntas quieres?</h4>
+                  <input
+                    className="botongenerado 1"
+                    type="number"
+                    min={0}
+                    max={15}
+                    value={numeroPreguntas}
+                    onChange={ValorInput}
+                  ></input>
+                  <div className="BotonesAlert">
+                    <button
+                      className="botonesocultos CerrarD"
+                      onClick={() => setHidden(!hidden)}
+                    >
+                      Cerrar
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleSubmit(file);
+                      }}
+                      className="botonesocultos Submit"
+                    >
+                      submit
+                    </button>
+                  </div>
+                </dialog>
               </div>
-            </dialog>
-          </div>
+            )}
+            <title>ProfesorGPT</title>
+            <div className="EspacioTexto">
+              <img src={UnieImage} alt="" className="Logo" />
+              <h1 className="Generador">
+                <b>TuProfesor</b>
+              </h1>
+              <h2>
+                <b className="seleccionfrase">La mejor</b> forma de preparar tus
+                examenes
+              </h2>
+            </div>
+            <div className="space_file">
+              <div className="Contenedor_file">
+                <input
+                  id="file"
+                  type="file"
+                  onChange={handleFileChange}
+                  required
+                  accept={ACCEPT_TYPES}
+                  hidden
+                />
+                <label
+                  onDragEnter={(e) => handleCounter(1, e)}
+                  onDragLeave={(e) => handleCounter(-1, e)}
+                  onDrop={handleDrop}
+                  className={`selectFile  ${
+                    draggingCounter === 0 ? "" : "dragging"
+                  }`}
+                  htmlFor="file"
+                >
+                  <img className="imagen_nube" src={cloudImage} alt="" />
+                  <br />
+                  <span>Subir archivo</span>
+                </label>
+              </div>
+              <div className="contenedorCentrado">
+                <img
+                  style={{
+                    visibility: selectedFileName == "" ? "hidden" : "visible",
+                  }}
+                  onClick={notVisibleFile}
+                  className="CerrarImagen"
+                  src={CerrarImage}
+                ></img>
+                <span hidden={selectedFileName === ""} className="lineanombre">
+                  Archivo seleccionado: <br />{" "}
+                  <b className="nombrearchivo">{selectedFileName}</b>
+                </span>
+              </div>
+            </div>
+            <div></div>
+
+            <div>
+              <button
+                className="Botones TipoTest"
+                onClick={() => setHidden(!hidden)}
+              >
+                <p>Tipo Test</p>
+              </button>
+              <button
+                className="Botones PreguntasAbiertas"
+                onClick={() => setHidden(!hidden)}
+              >
+                <p>Preguntas Abiertas</p>
+              </button>
+              <button onClick={HandleVisibilityChange} className="Botones ">
+                <p>Mapa mental</p>
+              </button>
+            </div>
+          </>
         )}
-        <title>ProfesorGPT</title>
-        <div className="EspacioTexto">
-          <img src={UnieImage} alt="" className="Logo" />
-          <h1 className="Generador">
-            <b>TuProfesor</b>
-          </h1>
-          <h2>
-            <b className="seleccionfrase">La mejor</b> forma de preparar tus
-            examenes
-          </h2>
-        </div>
-        <div className="space_file">
-          <div className="Contenedor_file">
-            <input
-              id="file"
-              type="file"
-              onChange={handleFileChange}
-              required
-              accept={ACCEPT_TYPES}
-              hidden
-            />
-            <label
-              onDragEnter={(e) => handleCounter(1, e)}
-              onDragLeave={(e) => handleCounter(-1, e)}
-              onDrop={handleDrop}
-              className={`selectFile  ${
-                draggingCounter === 0 ? "" : "dragging"
-              }`}
-              htmlFor="file"
-            >
-              <img className="imagen_nube" src={cloudImage} alt="" />
-              <br />
-              <span>Subir archivo</span>
-            </label>
-          </div>
-          <div className="contenedorCentrado">
-            <img
-              style={{
-                visibility: selectedFileName == "" ? "hidden" : "visible",
-              }}
-              onClick={notVisibleFile}
-              className="CerrarImagen"
-              src={CerrarImage}
-            ></img>
-            <span hidden={selectedFileName === ""} className="lineanombre">
-              Archivo seleccionado: <br />{" "}
-              <b className="nombrearchivo">{selectedFileName}</b>
-            </span>
-          </div>
-        </div>
-        <div></div>
-
-        <div>
-          <button
-            className="Botones TipoTest"
-            onClick={() => setHidden(!hidden)}
-          >
-            <p>Tipo Test</p>
-          </button>
-          <button
-            className="Botones PreguntasAbiertas"
-            onClick={() => setHidden(!hidden)}
-          >
-            <p>Preguntas Abiertas</p>
-          </button>
-          <button
-            onClick={() => {
-              handleSubmit(file);
-            }}
-            className="Botones "
-          >
-            <p>Mapa mental</p>
-          </button>
-        </div>
-
-        {result && (
-          <img
-            style={{ backgroundColor: "white" }}
-            src={"data:image/jpeg;base64," + result}
-          ></img>
+        {mapaMentalVisible && (
+          <>
+            {loadingImage && (<div><button onClick={()=>setMapaMentalVisible(!mapaMentalVisible)}>Volver</button>
+            <h3>Cargando imagen...</h3></div>)}
+            {result && (
+              <div>
+              
+              <img
+                style={{ backgroundColor: "white" }}
+                src={"data:image/jpeg;base64," + result}
+              />
+              </div>
+            )}
+          </>
         )}
       </div>
-      
     )
   );
 }
