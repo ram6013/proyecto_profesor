@@ -38,10 +38,11 @@ async function apiRequest(file) {
 
 export function ExamGenerator() {
     const [draggingCounter, setDragginCounter] = useState(0);
-    const [selectedFileName, setSelectedFileName] = useState("");
-    const [file, setFile] = useState(null);
-    const [hidden, setHidden] = useState(true);
+    // Ramon: Como nos dan el file directamente, cambie el tener 2 useState a uno solo
+    // ya que selectedFile tiene el .name y no se necesita fileName
+    const [selectedFile, setSelectedFile] = useState(null);
     const [numeroPreguntas, setNumeroPreguntas] = useState(0);
+    const [hidden, setHidden] = useState(true);
     const [result, setResult] = useState(null);
     const [preguntas, setPreguntas] = useState();
     const [mapaMentalVisible, setMapaMentalVisible] = useState(false);
@@ -80,16 +81,12 @@ export function ExamGenerator() {
 
     function handleDrop(ev) {
         handleCounter(-1, ev);
-        [...ev.dataTransfer.files].forEach((file) => {
-            setSelectedFileName(file.name);
-        });
+        setSelectedFile(ev.dataTransfer.files[0]);
     }
 
     function handleFileChange(event) {
-        const fileName = event.target.files[0]?.name || "";
         const file = event.target.files[0];
-        setFile(file);
-        setSelectedFileName(fileName);
+        setSelectedFile(file);
     }
 
     // Ramon: Este se llamaba valorInput, que no esta mal
@@ -108,146 +105,142 @@ export function ExamGenerator() {
 
     function handleVisibilityChange() {
         // setMapaMentalVisible(true);
-        handleSubmit(file);
+        handleSubmit(selectedFile);
     }
 
-    return (
-        preguntas && (
-            <div className={`exam-generator-container`} onDragOver={(e) => e.preventDefault()}>
-                <Toaster />
-                {!mapaMentalVisible && (
-                    <>
-                        {!hidden && (
-                            <div
-                                style={{
-                                    backgroundColor: "rgba(0, 0, 0, 0.5)",
-                                    width: "100%",
-                                    height: "100%",
-                                    position: "absolute",
-                                }}
-                                onClick={() => setHidden(!hidden)}
-                            >
-                                <dialog
-                                    open
-                                    className="dialog"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                    }}
+    return <div className={`exam-generator-container`} onDragOver={(e) => e.preventDefault()}>
+        <Toaster />
+        {!mapaMentalVisible && (
+            <>
+                {!hidden && (
+                    <div
+                        style={{
+                            backgroundColor: "rgba(0, 0, 0, 0.5)",
+                            width: "100%",
+                            height: "100%",
+                            position: "absolute",
+                        }}
+                        onClick={() => setHidden(!hidden)}
+                    >
+                        <dialog
+                            open
+                            className="dialog"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                            }}
+                        >
+                            <h4 id="texto-dialogo">¿Cuántas preguntas quieres?</h4>
+                            <input
+                                className="dialog-input"
+                                type="number"
+                                min={0}
+                                max={15}
+                                value={numeroPreguntas}
+                                onChange={onInputChange}
+                            ></input>
+                            <div className="botones-alert">
+                                <button
+                                    className="botones-ocultos cerrar-d"
+                                    onClick={() => setHidden(!hidden)}
                                 >
-                                    <h4 id="texto-dialogo">¿Cuántas preguntas quieres?</h4>
-                                    <input
-                                        className="boton-generado"
-                                        type="number"
-                                        min={0}
-                                        max={15}
-                                        value={numeroPreguntas}
-                                        onChange={onInputChange}
-                                    ></input>
-                                    <div className="botones-alert">
-                                        <button
-                                            className="botones-ocultos cerrar-d"
-                                            onClick={() => setHidden(!hidden)}
-                                        >
-                                            Cerrar
-                                        </button>
-                                        <button
-                                            onClick={() => handleSubmit(file)}
-                                            className="botones-ocultos submit"
-                                        >
-                                            submit
-                                        </button>
-                                    </div>
-                                </dialog>
-                            </div>
-                        )}
-                        <title>ProfesorGPT</title>
-                        <div className="espacio-texto">
-                            <img src={UNIE_IMAGE} alt="" className="Logo" />
-                            <h1 className="generador">
-                                <b>TuProfesor</b>
-                            </h1>
-                            <h2>
-                                <b className="seleccion-frase">La mejor</b> forma de preparar tus
-                                examenes
-                            </h2>
-                        </div>
-                        <div className="space-file">
-                            <div className="contenedor-file">
-                                <input
-                                    id="file"
-                                    type="file"
-                                    onChange={handleFileChange}
-                                    required
-                                    accept={ACCEPT_TYPES}
-                                    hidden
-                                />
-                                <label
-                                    onDragEnter={(e) => handleCounter(1, e)}
-                                    onDragLeave={(e) => handleCounter(-1, e)}
-                                    onDrop={handleDrop}
-                                    className={`select-file  ${draggingCounter === 0 ? "" : "dragging"
-                                        }`}
-                                    htmlFor="file"
+                                    Cerrar
+                                </button>
+                                <button
+                                    onClick={() => handleSubmit(selectedFile)}
+                                    className="botones-ocultos submit"
                                 >
-                                    <img className="imagen-nube" src={CLOUD_IMAGE} alt="" />
-                                    <br />
-                                    <span>Subir archivo</span>
-                                </label>
+                                    submit
+                                </button>
                             </div>
-                            <div className="contenedor-centrado">
-                                <img alt="Imagen de cerrar"
-                                    style={{
-                                        visibility: selectedFileName === "" ? "hidden" : "visible",
-                                    }}
-                                    /* Ramon: aqui habia una funcion, y como se usa una sola vez la cambie */
-                                    onClick={() => setSelectedFileName("")}
-                                    className="cerrar-imagen"
-                                    src={CERRAR_IMAGE}
-                                ></img>
-                                <span hidden={selectedFileName === ""} className="linea-nombre">
-                                    Archivo seleccionado: <br />{" "}
-                                    <b className="nombre-archivo">{selectedFileName}</b>
-                                </span>
-                            </div>
-                        </div>
-                        <div></div>
-
-                        <div>
-                            <button
-                                className="botones tipo-test"
-                                onClick={() => setHidden(!hidden)}
-                            >
-                                <p>Tipo Test</p>
-                            </button>
-                            <button
-                                className="botones preguntas-abiertas"
-                                onClick={() => setHidden(!hidden)}
-                            >
-                                <p>Preguntas Abiertas</p>
-                            </button>
-                            <button onClick={handleVisibilityChange} className="botones">
-                                <p>Mapa mental</p>
-                            </button>
-                        </div>
-                    </>
+                        </dialog>
+                    </div>
                 )}
-                {mapaMentalVisible && (
-                    <>
-                        {loadingImage && (<div><button onClick={() => setMapaMentalVisible(!mapaMentalVisible)}>Volver</button>
-                            <h3>Cargando imagen...</h3></div>)}
-                        {result && (
-                            <div>
+                <title>ProfesorGPT</title>
+                <div className="espacio-texto">
+                    <img src={UNIE_IMAGE} alt="" className="logo" />
+                    <h1 className="generador">
+                        <b>TuProfesor</b>
+                    </h1>
+                    <h2>
+                        <b className="seleccion-frase">La mejor</b> forma de preparar tus
+                        examenes
+                    </h2>
+                </div>
+                <div className="space-file">
+                    <div className="contenedor-file">
+                        <input
+                            id="file"
+                            type="file"
+                            onChange={handleFileChange}
+                            required
+                            accept={ACCEPT_TYPES}
+                            hidden
+                        />
+                        <label
+                            onDragEnter={(e) => handleCounter(1, e)}
+                            onDragLeave={(e) => handleCounter(-1, e)}
+                            onDrop={handleDrop}
+                            className={`select-file  ${draggingCounter === 0 ? "" : "dragging"
+                                }`}
+                            htmlFor="file"
+                        >
+                            <img className="imagen-nube" src={CLOUD_IMAGE} alt="" />
+                            <br />
+                            <span>Subir archivo</span>
+                        </label>
+                    </div>
+                    <div className="contenedor-centrado">
+                        <img alt="Imagen de cerrar"
+                            style={{
+                                visibility: !selectedFile ? "hidden" : "visible",
+                            }}
+                            /* Ramon: aqui habia una funcion, y como se usa una sola vez la cambie */
+                            onClick={() => setSelectedFile(null)}
+                            className="cerrar-imagen"
+                            src={CERRAR_IMAGE}
+                        ></img>
+                        <span hidden={!selectedFile} className="linea-nombre">
+                            Archivo seleccionado: <br />{" "}
+                            <b className="nombre-archivo">{selectedFile?.name}</b>
+                        </span>
+                    </div>
+                </div>
+                <div></div>
 
-                                <img
-                                    alt="Mapa mental"
-                                    style={{ backgroundColor: "white" }}
-                                    src={result}
-                                />
-                            </div>
-                        )}
-                    </>
+                <div>
+                    <button
+                        className="botones tipo-test"
+                        onClick={() => setHidden(!hidden)}
+                    >
+                        <p>Tipo Test</p>
+                    </button>
+                    <button
+                        className="botones preguntas-abiertas"
+                        onClick={() => setHidden(!hidden)}
+                    >
+                        <p>Preguntas Abiertas</p>
+                    </button>
+                    <button onClick={handleVisibilityChange} className="botones">
+                        <p>Mapa mental</p>
+                    </button>
+                </div>
+            </>
+        )}
+        {mapaMentalVisible && (
+            <>
+                {loadingImage && (<div><button onClick={() => setMapaMentalVisible(!mapaMentalVisible)}>Volver</button>
+                    <h3>Cargando imagen...</h3></div>)}
+                {result && (
+                    <div>
+
+                        <img
+                            alt="Mapa mental"
+                            style={{ backgroundColor: "white" }}
+                            src={result}
+                        />
+                    </div>
                 )}
-            </div>
-        )
-    );
+            </>
+        )}
+    </div>
 }

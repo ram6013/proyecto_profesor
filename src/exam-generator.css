@@ -140,16 +140,7 @@ h4 {
   align-items: center;
 }
 
-.contenedor-boton-culto {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  width: 15em;
-  height: 30em;
-}
-
-.boton-generado {
+.dialog-input {
   background-color: white;
   color: black;
   font-size: 70%;
@@ -176,7 +167,7 @@ h4 {
   left: 50%;
   transform: translate(-50%, -50%);
   padding: 1% 1% 1% 1%;
-  border-radius: 10%;
+  border-radius: 10px;
 }
 
 .botones-alert {
@@ -188,7 +179,7 @@ h4 {
 
 .botones-ocultos {
   cursor: pointer;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 .cerrar-d {
