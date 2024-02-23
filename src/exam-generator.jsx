@@ -36,20 +36,33 @@ async function apiRequest(file) {
     return axios.request(config);
 }
 
-export function ExamGenerator() {
+// Ramon: Aqui cree mi propio hook, que es una funcion que devuelve un objeto
+// Asi funcionan los de react por dentro, esta es para lo del drag and drop
+function useDragSemaphore() {
     const [draggingCounter, setDragginCounter] = useState(0);
+
+    const handleCounter = (increment, event) => {
+        event.preventDefault();
+        setDragginCounter((c) => c + increment);
+    };
+
+    return { draggingCounter, handleCounter };
+}
+
+export function ExamGenerator() {
+    const { draggingCounter, handleCounter } = useDragSemaphore();
     // Ramon: Como nos dan el file directamente, cambie el tener 2 useState a uno solo
     // ya que selectedFile tiene el .name y no se necesita fileName
     const [selectedFile, setSelectedFile] = useState(null);
     const [numeroPreguntas, setNumeroPreguntas] = useState(0);
-    const [hidden, setHidden] = useState(true);
+    const [dialogOpen, setDialogOpen] = useState(false);
     const [result, setResult] = useState(null);
-    const [preguntas, setPreguntas] = useState();
+    const [, setPreguntas] = useState();
     const [mapaMentalVisible, setMapaMentalVisible] = useState(false);
     const [loadingImage, setLoadingImage] = useState(false);
 
     useEffect(() => {
-        // Ramon: Bienc hecho aqui
+        // Ramon: Bien hecho aqui
         fetch(BASE_URL + "/template")
             .then((response) => response.json())
             .then((res) => setPreguntas(res))
@@ -74,19 +87,9 @@ export function ExamGenerator() {
             .finally(() => { setLoadingImage(false); });
     }
 
-    function handleCounter(increment, event) {
-        event.preventDefault();
-        setDragginCounter((c) => c + increment);
-    }
-
     function handleDrop(ev) {
         handleCounter(-1, ev);
         setSelectedFile(ev.dataTransfer.files[0]);
-    }
-
-    function handleFileChange(event) {
-        const file = event.target.files[0];
-        setSelectedFile(file);
     }
 
     // Ramon: Este se llamaba valorInput, que no esta mal
@@ -108,54 +111,64 @@ export function ExamGenerator() {
         handleSubmit(selectedFile);
     }
 
+    // Ramon: Aqui cree un componente para el dialogo, que es simplemente una funcion
+    // que devuelve un JSX, asi no se mezcla con el resto del codigo
+    // Luego lo puedes llamar como un tag <DialogPopUp />
+    // y si quieres que tenga props, se los pasas como si fuera un tag normal
+    // <DialogPopUp open={dialogOpen} />
+    // Eso si en la declaracion de la funcion le pones (props) y luego usas props.open
+    // funcion DialogPopUp(props) { return <dialog open={props.open} ... }
+    function DialogPopUp() {
+        return <div style={{
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            width: "100%",
+            height: "100%",
+            position: "absolute",
+        }}
+            hidden={!dialogOpen}
+            onClick={() => setDialogOpen(!dialogOpen)}>
+            <dialog
+                open={dialogOpen}
+                className="dialog"
+                onClick={(e) => e.stopPropagation()} >
+                <h4 id="texto-dialogo">¿Cuántas preguntas quieres?</h4>
+                <input
+                    className="dialog-input"
+                    type="number"
+                    maxLength={3}
+                    value={numeroPreguntas}
+                    onChange={onInputChange}
+                ></input>
+                <div className="botones-alert">
+                    <button
+                        className="botones-ocultos cerrar-d"
+                        onClick={() => setDialogOpen(!dialogOpen)}
+                    >
+                        Cerrar
+                    </button>
+                    <button
+                        onClick={() => handleSubmit(selectedFile)}
+                        className="botones-ocultos submit"
+                    >
+                        submit
+                    </button>
+                </div>
+            </dialog>
+        </div>;
+    }
+
     return <div className={`exam-generator-container`} onDragOver={(e) => e.preventDefault()}>
         <Toaster />
         {!mapaMentalVisible && (
             <>
-                {!hidden && (
-                    <div
-                        style={{
-                            backgroundColor: "rgba(0, 0, 0, 0.5)",
-                            width: "100%",
-                            height: "100%",
-                            position: "absolute",
-                        }}
-                        onClick={() => setHidden(!hidden)}
-                    >
-                        <dialog
-                            open
-                            className="dialog"
-                            onClick={(e) => {
-                                e.stopPropagation();
-                            }}
-                        >
-                            <h4 id="texto-dialogo">¿Cuántas preguntas quieres?</h4>
-                            <input
-                                className="dialog-input"
-                                type="number"
-                                min={0}
-                                max={15}
-                                value={numeroPreguntas}
-                                onChange={onInputChange}
-                            ></input>
-                            <div className="botones-alert">
-                                <button
-                                    className="botones-ocultos cerrar-d"
-                                    onClick={() => setHidden(!hidden)}
-                                >
-                                    Cerrar
-                                </button>
-                                <button
-                                    onClick={() => handleSubmit(selectedFile)}
-                                    className="botones-ocultos submit"
-                                >
-                                    submit
-                                </button>
-                            </div>
-                        </dialog>
-                    </div>
-                )}
-                <title>ProfesorGPT</title>
+                <DialogPopUp />
+
+                {/* 
+                Ramon: Este title es el nombre que se muestra en la pestaña del navegador
+                esto va es en el del html, que no se puede modificar desde react
+                <title>ProfesorGPT</title> 
+                */}
+
                 <div className="espacio-texto">
                     <img src={UNIE_IMAGE} alt="" className="logo" />
                     <h1 className="generador">
@@ -171,7 +184,8 @@ export function ExamGenerator() {
                         <input
                             id="file"
                             type="file"
-                            onChange={handleFileChange}
+                            /*Ramon: como se usa en un solo lugar, cambie la funcion a que se cree aqui mismo*/
+                            onChange={(event) => setSelectedFile(event.target.files[0])}
                             required
                             accept={ACCEPT_TYPES}
                             hidden
@@ -180,8 +194,7 @@ export function ExamGenerator() {
                             onDragEnter={(e) => handleCounter(1, e)}
                             onDragLeave={(e) => handleCounter(-1, e)}
                             onDrop={handleDrop}
-                            className={`select-file  ${draggingCounter === 0 ? "" : "dragging"
-                                }`}
+                            className={`select-file  ${draggingCounter === 0 ? "" : "dragging"}`}
                             htmlFor="file"
                         >
                             <img className="imagen-nube" src={CLOUD_IMAGE} alt="" />
@@ -205,18 +218,16 @@ export function ExamGenerator() {
                         </span>
                     </div>
                 </div>
-                <div></div>
-
                 <div>
                     <button
-                        className="botones tipo-test"
-                        onClick={() => setHidden(!hidden)}
+                        className="botones"
+                        onClick={() => setDialogOpen(!dialogOpen)}
                     >
                         <p>Tipo Test</p>
                     </button>
                     <button
-                        className="botones preguntas-abiertas"
-                        onClick={() => setHidden(!hidden)}
+                        className="botones"
+                        onClick={() => setDialogOpen(!dialogOpen)}
                     >
                         <p>Preguntas Abiertas</p>
                     </button>
