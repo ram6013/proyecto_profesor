@@ -32,10 +32,12 @@ export function ExamGenerator() {
     // Ramon: Como nos dan el selectedFile directamente, cambie el tener 2 useState a uno solo
     // ya que selectedFile tiene el .name y no se necesita fileName
     const [selectedFile, setSelectedFile] = useState(null);
-    const [numeroPreguntas, setNumeroPreguntas] = useState(5);
+    // Ramon: puse que sea 5 por defecto, como minimo
+    // No tendria sentido menos preguntas xd
+    const [numberOfQuestions, setNumberOfQuestions] = useState(5);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [result, setResult] = useState(null);
-    const [, setPreguntas] = useState(null);
+    const [questions, setQuestions] = useState(null);
     // Ramon: Cambie el nombre a de loadingImage a loading, para utilizarlo para mas cosas
     const [loading, setLoading] = useState(false);
 
@@ -43,7 +45,7 @@ export function ExamGenerator() {
         // Ramon: Bien hecho aqui
         fetch(BASE_URL + "/template")
             .then((response) => response.json())
-            .then((res) => setPreguntas(res))
+            .then((res) => setQuestions(res))
             .catch((error) => console.error("Error al obtener las preguntas:", error));
     }, []);
 
@@ -78,7 +80,16 @@ export function ExamGenerator() {
         }
         // Ramon: el codigo complicado que mencione, esto resume el if else
         value = Math.max(5, Math.min(value, QUESTION_LIMIT));
-        setNumeroPreguntas(value);
+        setNumberOfQuestions(value);
+    }
+
+    // Ramon: Aqui esta tu componente
+    // Ahora te toca visualizarlo en el navegador
+    // Y hacer que interactivo
+    function InteractiveExam() {
+        // Aqui simplemente los transformo devuelta en una string de JSON
+        // para que los puedas ver en el navegador
+        return <pre> {questions.map((q) => JSON.stringify(q, null, 4))} </pre>
     }
 
     // Ramon: aqui creo la funcion con el hook useCallback
@@ -101,7 +112,7 @@ export function ExamGenerator() {
         </header>
         <Toaster />
         <DialogPopUp
-            numeroPreguntas={numeroPreguntas}
+            numeroPreguntas={numberOfQuestions}
             onInputChange={onInputChange}
             open={dialogOpen}
             toggleDialog={toggleDialog}
@@ -124,8 +135,7 @@ export function ExamGenerator() {
                     </button>
                 ))}
             </div>
-        </>
-        }
+        </>}
         {loading && <div><h3>Cargando imagen...</h3></div>}
         {result &&
             <div>
