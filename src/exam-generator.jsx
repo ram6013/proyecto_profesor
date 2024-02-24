@@ -5,10 +5,11 @@ import toast, { Toaster } from "react-hot-toast";
 // Ramon: por convencion las constantes se escriben en formato de SCREAMING_SNAKE_CASE
 // las variables y funciones en camelCase y las clases en PascalCase
 import UNIE_IMAGE from "./images/unieLogo.png";
-// Ramon: El css al final para que se aplique a librerias y tal que importemos
-import "./exam-generator.css";
 import FileUploader from "./FileUploader";
 import DialogPopUp from "./DialogPopUp";
+
+// Ramon: El css al final para que se aplique a librerias y tal que importemos
+import "./exam-generator.css";
 
 const BASE_URL = "http://metal.engineer/api";
 const QUESTION_LIMIT = 30;
@@ -28,15 +29,15 @@ async function apiRequest(file) {
 }
 
 export function ExamGenerator() {
-    // Ramon: Como nos dan el file directamente, cambie el tener 2 useState a uno solo
+    // Ramon: Como nos dan el selectedFile directamente, cambie el tener 2 useState a uno solo
     // ya que selectedFile tiene el .name y no se necesita fileName
     const [selectedFile, setSelectedFile] = useState(null);
     const [numeroPreguntas, setNumeroPreguntas] = useState(5);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [result, setResult] = useState(null);
     const [, setPreguntas] = useState(null);
-    const [mapaMentalVisible, setMapaMentalVisible] = useState(false);
-    const [loadingImage, setLoadingImage] = useState(false);
+    // Ramon: Cambie el nombre a de loadingImage a loading, para utilizarlo para mas cosas
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         // Ramon: Bien hecho aqui
@@ -46,18 +47,18 @@ export function ExamGenerator() {
             .catch((error) => console.error("Error al obtener las preguntas:", error));
     }, []);
 
-    function handleSubmit(file) {
-        if (!file) {
+    function handleSubmit() {
+        if (!selectedFile) {
             // Ramon: Es una funcion, lo puedes llamar directamente!
             toast.error("No has subido ningún archivo");
             return;
         }
 
-        setLoadingImage(true);
-        const request = apiRequest(file)
+        setLoading(true);
+        const request = apiRequest(selectedFile)
             .then((response) => setResult(response.data))
             .catch((error) => console.error("Error al generar la imagen:", error))
-            .finally(() => setLoadingImage(false));
+            .finally(() => setLoading(false));
 
         toast.promise(request, {
             loading: "Generando imagen...",
@@ -80,20 +81,16 @@ export function ExamGenerator() {
         setNumeroPreguntas(value);
     }
 
-    function handleVisibilityChange() {
-        setMapaMentalVisible(true);
-        handleSubmit(selectedFile);
-    }
-
     // Ramon: aqui creo la funcion con el hook useCallback
     // Para que cada vez que react refresque los componentes, no se vuelva a crear 
     const toggleDialog = useCallback(() => setDialogOpen(d => !d), []);
 
     // Ramon: Aqui cree un array de botones, que es lo que se va a mostrar
     // Y genero el html con codigo, para que sea mas facil
-    const botones = [{ name: "Tipo Test" }, { name: "Preguntas Abiertas" }, { name: "Mapa mental", onClick: handleVisibilityChange }];
+    const botones = [{ name: "Tipo Test" }, { name: "Preguntas Abiertas" }, { name: "Mapa mental", onClick: handleSubmit }];
 
     return <div className={`exam-generator-container`} onDragOver={(e) => e.preventDefault()}>
+        {/* Ramon: Aqui lw cambie el tag de div a header, solo para que sea mas facil de entender*/}
         <header className="espacio-texto">
             <img src={UNIE_IMAGE} alt="logo" className="logo" />
             <h1 className="generador"><b>TuProfesor</b></h1>
@@ -106,12 +103,11 @@ export function ExamGenerator() {
         <DialogPopUp
             numeroPreguntas={numeroPreguntas}
             onInputChange={onInputChange}
-            dialogOpen={dialogOpen}
+            open={dialogOpen}
             toggleDialog={toggleDialog}
-            handleSubmit={handleSubmit}
             selectedFile={selectedFile}
         />
-        {!mapaMentalVisible && <>
+        {!(loading || result) && <>
             {/* 
             Ramon: Este title es el nombre que se muestra en la pestaña del navegador
             esto va es en el del html, que no se puede modificar desde react
@@ -130,17 +126,19 @@ export function ExamGenerator() {
             </div>
         </>
         }
-        {loadingImage && <div> <h3>Cargando imagen...</h3> </div>}
+        {loading && <div><h3>Cargando imagen...</h3></div>}
         {result &&
             <div>
                 <img
                     alt="Mapa mental"
                     className="mapa-mental"
                     src={result}
+                    /*Ramon: es solo abrir la imagen en otra ventana*/
                     onClick={() => window.open(result, "_blank")}
                 />
                 <button onClick={() => {
-                    setMapaMentalVisible(!mapaMentalVisible);
+                    // Ramon: No olvides limpiar el resultado y asi no tienes que verificar if mapaMentalVisible
+                    // Solamente si no esta loading, o si hay resultado
                     setResult(null);
                 }}>Volver</button>
             </div>

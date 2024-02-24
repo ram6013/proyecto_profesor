@@ -1,6 +1,8 @@
+import { useState } from "react";
+import toast from "react-hot-toast";
+
 import CLOUD_IMAGE from "./images/cloud.png";
 import CERRAR_IMAGE from "./images/cerrar.png";
-import { useState } from "react";
 
 // Ramon: Esto es solo para mostrarte como puedes hacer una lista y volverla una string
 const ACCEPT_TYPES = [
@@ -29,7 +31,20 @@ export default function FileUploader({ setSelectedFile, selectedFile }) {
 
     function handleDrop(ev) {
         handleCounter(-1, ev);
-        setSelectedFile(ev.dataTransfer.files[0]);
+        addFile(ev);
+    }
+
+    function addFile(event) {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setSelectedFile(file);
+        toast.success("Archivo añadido");
+    }
+
+    function removeFile() {
+        setSelectedFile(null);
+        toast.error("Archivo eliminado");
     }
 
     return <div className="space-file">
@@ -37,8 +52,7 @@ export default function FileUploader({ setSelectedFile, selectedFile }) {
             <input
                 id="file"
                 type="file"
-                /*Ramon: como se usa en un solo lugar, cambie la funcion a que se cree aqui mismo*/
-                onChange={(event) => setSelectedFile(event.target.files[0])}
+                onChange={addFile}
                 accept={ACCEPT_TYPES}
                 hidden
             />
@@ -55,19 +69,17 @@ export default function FileUploader({ setSelectedFile, selectedFile }) {
             </label>
         </div>
         <div className="contenedor-centrado">
-            <img alt="Imagen de cerrar"
-                style={{
-                    visibility: !selectedFile ? "hidden" : "visible",
-                }}
-                /* Ramon: aqui habia una funcion, y como se usa una sola vez la cambie */
-                onClick={() => setSelectedFile(null)}
-                className="cerrar-imagen"
-                src={CERRAR_IMAGE}
-            />
             <span hidden={!selectedFile} className="linea-nombre">
                 Archivo seleccionado: <br />{" "}
                 <b className="nombre-archivo">{selectedFile?.name}</b>
             </span>
+            <br />
+            <img alt="Imagen de cerrar"
+                style={{ visibility: !selectedFile ? "hidden" : "visible" }}
+                onClick={removeFile}
+                className="cerrar-imagen"
+                src={CERRAR_IMAGE}
+            />
         </div>
     </div>
 }

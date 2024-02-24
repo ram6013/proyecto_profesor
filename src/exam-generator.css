@@ -74,7 +74,7 @@ h4 {
 }
 
 .space-file {
-    padding: 8vh;
+    padding-bottom: 8vh;
 }
 
 .botones {
@@ -128,6 +128,8 @@ h4 {
 
 .linea-nombre {
     text-align: center;
+    margin-left: 8%;
+    margin-top: 1%;
 }
 
 .logo {
@@ -146,15 +148,13 @@ h4 {
 }
 
 .cerrar-imagen {
-    width: 8%;
-    display: flex;
-    align-self: flex-end;
+    width: 5%;
     cursor: pointer;
+    margin-left: 10px;
 }
 
 .contenedor-centrado {
     display: flex;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
 }

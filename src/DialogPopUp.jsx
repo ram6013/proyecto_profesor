@@ -5,17 +5,17 @@
 // <DialogPopUp open={dialogOpen} />
 // Eso si en la declaracion de la funcion le pones (props) y luego usas props.open
 // funcion DialogPopUp(props) { return <dialog open={props.open} ... }
-export default function DialogPopUp({ numeroPreguntas, onInputChange, dialogOpen, toggleDialog, handleSubmit, selectedFile }) {
+export default function DialogPopUp({ numeroPreguntas, onInputChange, open, toggleDialog, handleSubmit  }) {
     return <div style={{
         backgroundColor: "rgba(0, 0, 0, 0.5)",
         width: "100%",
         height: "100%",
         position: "absolute",
     }}
-        hidden={!dialogOpen}
+        hidden={!open}
         onClick={toggleDialog}>
         <dialog
-            open={dialogOpen}
+            open={open}
             className="dialog"
             onClick={(e) => e.stopPropagation()} >
             <h4 id="texto-dialogo">¿Cuántas preguntas quieres?</h4>
@@ -34,7 +34,7 @@ export default function DialogPopUp({ numeroPreguntas, onInputChange, dialogOpen
                     Cerrar
                 </button>
                 <button
-                    onClick={() => handleSubmit(selectedFile)}
+                    onClick={handleSubmit}
                     className="botones-ocultos submit"
                 >
                     submit
