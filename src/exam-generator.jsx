@@ -52,16 +52,18 @@ export function ExamGenerator() {
             toast.error("No has subido ningún archivo");
             return;
         }
-        toast.success("Se ha subido bien el archivo...");
 
         setLoadingImage(true);
-        apiRequest(file)
-            .then((response) => { setResult(response.data); })
-            .catch((error) => {
-                console.error("Error al generar la imagen:", error);
-                toast.error("Error al generar la imagen.");
-            })
-            .finally(() => { setLoadingImage(false); });
+        const request = apiRequest(file)
+            .then((response) => setResult(response.data))
+            .catch((error) => console.error("Error al generar la imagen:", error))
+            .finally(() => setLoadingImage(false));
+
+        toast.promise(request, {
+            loading: "Generando imagen...",
+            success: "Imagen generada correctamente!",
+            error: "Error al generar la imagen."
+        });
     }
 
     // Ramon: Este se llamaba valorInput, que no esta mal
@@ -79,7 +81,7 @@ export function ExamGenerator() {
     }
 
     function handleVisibilityChange() {
-        // setMapaMentalVisible(true);
+        setMapaMentalVisible(true);
         handleSubmit(selectedFile);
     }
 
@@ -101,13 +103,13 @@ export function ExamGenerator() {
             </h2>
         </header>
         <Toaster />
-        <DialogPopUp 
-            numeroPreguntas={numeroPreguntas} 
-            onInputChange={onInputChange} 
-            dialogOpen={dialogOpen} 
-            toggleDialog={toggleDialog} 
-            handleSubmit={handleSubmit} 
-            selectedFile={selectedFile} 
+        <DialogPopUp
+            numeroPreguntas={numeroPreguntas}
+            onInputChange={onInputChange}
+            dialogOpen={dialogOpen}
+            toggleDialog={toggleDialog}
+            handleSubmit={handleSubmit}
+            selectedFile={selectedFile}
         />
         {!mapaMentalVisible && <>
             {/* 
@@ -128,22 +130,20 @@ export function ExamGenerator() {
             </div>
         </>
         }
-        {mapaMentalVisible && <>
-            {loadingImage &&
-                <div>
-                    <button onClick={() => setMapaMentalVisible(!mapaMentalVisible)}>Volver</button>
-                    <h3>Cargando imagen...</h3>
-                </div>}
-            {result &&
-                <div>
-                    <img
-                        alt="Mapa mental"
-                        style={{ backgroundColor: "white" }}
-                        src={result}
-                    />
-                </div>
-            }
-        </>
+        {loadingImage && <div> <h3>Cargando imagen...</h3> </div>}
+        {result &&
+            <div>
+                <img
+                    alt="Mapa mental"
+                    className="mapa-mental"
+                    src={result}
+                    onClick={() => window.open(result, "_blank")}
+                />
+                <button onClick={() => {
+                    setMapaMentalVisible(!mapaMentalVisible);
+                    setResult(null);
+                }}>Volver</button>
+            </div>
         }
     </div>
 }
