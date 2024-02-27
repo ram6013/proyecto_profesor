@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
-
 // Ramon: por convencion las constantes se escriben en formato de SCREAMING_SNAKE_CASE
 // las variables y funciones en camelCase y las clases en PascalCase
 import UNIE_IMAGE from "./images/unieLogo.png";
@@ -15,6 +14,8 @@ const BASE_URL = "http://localhost:8080/api";
 const QUESTION_LIMIT = 30;
 
 // Ramon: esta funcion no necesita ningun useState, por lo que se puede poner fuera
+
+//Pregunta: Esta función sirve para  coger el file que nosotros subimos y lo posteamos en el servidor no? es asincrona porque no bloqueamos la interfaz mientras este file se envía?
 async function apiRequest(file) {
   const formData = new FormData();
   formData.append("file", file);
@@ -26,6 +27,7 @@ async function apiRequest(file) {
   };
 
   return axios.request(config);
+  //Pregunta: Esto que devuelve? y para que se usa?
 }
 
 export function ExamGenerator() {
@@ -47,6 +49,8 @@ export function ExamGenerator() {
 
   useEffect(() => {
     // Ramon: Bien hecho aqui
+    //Pregunta:  No entiendo esto, el response me imagino que es lo que devuelve la api y lo transformamos en json pero res que es?
+    //  Ah vale creo que lo entendí es para el tipo test el res y el response para el mapa mental
     fetch(BASE_URL + "/template")
       .then((response) => response.json())
       .then((res) => setQuestions(res))
@@ -55,6 +59,7 @@ export function ExamGenerator() {
       );
   }, []);
 
+  //Pregunta: Esto se puede borrar no?
   fetch(BASE_URL + "/").then();
 
   function handleSubmit() {
@@ -147,7 +152,8 @@ export function ExamGenerator() {
   }
 
   // Ramon: aqui creo la funcion con el hook useCallback
-  // Para que cada vez que react refresque los componentes, no se vuelva a crear
+  // Para que cada vez que react refresque los componentes, no se vuelva a crear. 
+  //Pregunta: Por que la importancia de esto?
   const toggleDialog = useCallback(() => setDialogOpen((d) => !d), []);
 
   // Ramon: Aqui cree un array de botones, que es lo que se va a mostrar
@@ -178,6 +184,7 @@ export function ExamGenerator() {
 
       <Toaster />
       <DialogPopUp
+      // Pregunta: No entiendo esto
         numeroPreguntas={numberOfQuestions}
         onInputChange={onInputChange}
         open={dialogOpen}
