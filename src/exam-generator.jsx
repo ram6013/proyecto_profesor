@@ -263,7 +263,6 @@ export function ExamGenerator() {
                       : incorrectos.includes(option)
                       ? "red"
                       : "";
-                    console.log(color);
                     return (
                       <div
                         key={i}
@@ -282,11 +281,12 @@ export function ExamGenerator() {
                             style={{ cursor: "pointer" }}
                             type="radio"
                             value={option}
-                            id={"option-" + i}
+                            //Agrego el index para que diferencie de cada pregunta porque solo se cambiaba de la pregunta 1.
+                            id={"option-"  + index + i}
                             name={"option-" + index}
                           ></input>
                           <label
-                            htmlFor={"option-" + i}
+                            htmlFor={"option-" + index + i}
                             style={{ cursor: "pointer" }}
                           >
                             {option}
