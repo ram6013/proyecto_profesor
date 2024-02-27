@@ -223,7 +223,8 @@ h4 {
     border-width: 0.3em;
     width: 45%;
 }
-.ButtonTipoTest{
+
+.button-tipo-test{
     color: white;
     background-color: #000000;
     text-align: center;
@@ -234,8 +235,15 @@ h4 {
     cursor: pointer;
     align-items: center;
     margin-left: 10%;
+    font-size: 100%;
     
 }
-.ContnetTipoTest{
+.content-tipo-test{
     text-align: left;
+}
+
+#Corregir{
+    background-color: #00C45E;
+    color: white;
+    border-color: #00C45E;
 }

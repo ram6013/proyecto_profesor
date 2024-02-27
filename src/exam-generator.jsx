@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -11,7 +11,7 @@ import DialogPopUp from "./DialogPopUp";
 // Ramon: El css al final para que se aplique a librerias y tal que importemos
 import "./exam-generator.css";
 
-const BASE_URL = "http://metal.engineer/api";
+const BASE_URL = "http://localhost:8080/api";
 const QUESTION_LIMIT = 30;
 
 // Ramon: esta funcion no necesita ningun useState, por lo que se puede poner fuera
@@ -40,6 +40,10 @@ export function ExamGenerator() {
   const [questions, setQuestions] = useState(null);
   // Ramon: Cambie el nombre a de loadingImage a loading, para utilizarlo para mas cosas
   const [loading, setLoading] = useState(false);
+  const fieldSetRef = useRef();
+
+  const [correctos, setCorrectos] = useState([]);
+  const [incorrectos, setIncorrectos] = useState([]);
 
   useEffect(() => {
     // Ramon: Bien hecho aqui
@@ -50,6 +54,8 @@ export function ExamGenerator() {
         console.error("Error al obtener las preguntas:", error)
       );
   }, []);
+
+  fetch(BASE_URL + "/").then();
 
   function handleSubmit() {
     if (!selectedFile) {
@@ -98,11 +104,34 @@ export function ExamGenerator() {
       }),
       {
         success: "Success",
-        loading: "Carganod archivo...",
+        loading: "Cargando archivo...",
         error: "Error",
       }
     );
   }
+
+  function correct() {
+    const correct = [];
+    const incorrect = [];
+    for (let i = 0; i < questions.length; i++) {
+      const fieldSet = document.getElementById("Eje " + i);
+      fieldSet
+        .querySelectorAll(`input[name="option-${i}"]`)
+        .forEach((input, index) => {
+          if (input.checked) {
+            const q1 = questions[i];
+            if (q1.answer === index) {
+              correct.push(input.value);
+            } else {
+              incorrect.push(input.value);
+            }
+          }
+        });
+    }
+    setCorrectos(correct);
+    setIncorrectos(incorrect);
+  }
+
   // Ramon: Este se llamaba valorInput, que no esta mal
   // pero generalmente cosas como eventos, se les pone "on" al principio
   function onInputChange(event) {
@@ -123,6 +152,7 @@ export function ExamGenerator() {
 
   // Ramon: Aqui cree un array de botones, que es lo que se va a mostrar
   // Y genero el html con codigo, para que sea mas facil
+
   const botones = [
     { name: "Tipo Test" },
     { name: "Preguntas Abiertas" },
@@ -195,6 +225,7 @@ export function ExamGenerator() {
           />
 
           <button
+            style={{ backgroundColor: "Black", color: "white", padding: "5%" }}
             onClick={() => {
               // Ramon: No olvides limpiar el resultado y asi no tienes que verificar if mapaMentalVisible
               // Solamente si no esta loading, o si hay resultado
@@ -210,33 +241,51 @@ export function ExamGenerator() {
         <div>
           {questions?.map((question, index) => (
             <div style={{ marginTop: "5%", marginBottom: "5%" }}>
-              <h4 className="ContnetTipoTest">
+              <h4 className="content-tipo-test">
                 {index + 1}. {question.content}
               </h4>
               <div style={{ marginLeft: "5%" }}>
-                <fieldset id={"Eje " + index} style={{border: 0}}>
-                  {question.options?.map((option, index) => {
+                <fieldset
+                  ref={fieldSetRef}
+                  id={"Eje " + index}
+                  style={{ border: 0 }}
+                >
+                  {question.options?.map((option, i) => {
+                    const color = correctos.includes(option)
+                      ? "green"
+                      : incorrectos.includes(option)
+                      ? "red"
+                      : "";
+                    console.log(color);
                     return (
-                      <>
-                        <div style={{ display: "flex", alignItems: "center" }}>
-                          <div
-                            style={{
-                              gap: 10,
-                              display: "flex",
-                              content: "space-between",
-                              alignItems: "center",
-                            }}
+                      <div
+                        key={i}
+                        style={{ display: "flex", alignItems: "center" }}
+                      >
+                        <div
+                          style={{
+                            color: color,
+                            gap: 10,
+                            display: "flex",
+                            content: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <input
+                            style={{ cursor: "pointer" }}
+                            type="radio"
+                            value={option}
+                            id={"option-" + i}
+                            name={"option-" + index}
+                          ></input>
+                          <label
+                            htmlFor={"option-" + i}
+                            style={{ cursor: "pointer" }}
                           >
-                            <input
-                              style={{ cursor: "pointer" }}
-                              type="radio"
-                              value={option}
-                              name={"Eje " + questions.indexOf(question)}
-                            ></input>
-                            <p>{option}</p>
-                          </div>
+                            {option}
+                          </label>
                         </div>
-                      </>
+                      </div>
                     );
                   })}
                 </fieldset>
@@ -245,14 +294,16 @@ export function ExamGenerator() {
           ))}
 
           <button
-            className="ButtonTipoTest"
+            className="button-tipo-test"
             onClick={() => {
               setQuestions(null);
             }}
           >
             Volver
           </button>
-          <button className="ButtonTipoTest">Corregir</button>
+          <button id="Corregir" onClick={correct} className="button-tipo-test">
+            Corregir
+          </button>
         </div>
       )}
     </div>
