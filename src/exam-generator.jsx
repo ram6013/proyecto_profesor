@@ -10,9 +10,10 @@ import "./exam-generator.css";
 const BASE_URL = "http://localhost:8080/api";
 const QUESTION_LIMIT = 30;
 
-async function apiRequest(file, endpoint) {
+async function apiRequest(file, endpoint, num) {
   const formData = new FormData();
   formData.append("file", file);
+  formData.append("num", num);
 
   const config = {
     method: "POST",
@@ -62,7 +63,7 @@ export function ExamGenerator() {
       return;
     }
 
-    toast.promise(apiRequest(selectedFile, "generate"), {
+    toast.promise(apiRequest(selectedFile, "generate", numberOfQuestions), {
       success: (res) => {
         console.log(res.data);
         setQuestions(res.data);
@@ -127,7 +128,7 @@ export function ExamGenerator() {
       return;
     }
 
-    toast.promise(apiRequest(selectedFile, "generate/open"), {
+    toast.promise(apiRequest(selectedFile, "generate/open", numberOfQuestions), {
       success: (res) => {
         setPreguntasAbiertas(res.data);
         setDialogOpen(false);
