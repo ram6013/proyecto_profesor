@@ -124,9 +124,15 @@ export function ExamGenerator() {
         };
 
         fetch("http://localhost:8080/api/correct", requestOptions)
-          .then((response) => response.text())
-          .then((result) => console.log(result))
-          .catch((error) => console.error(error));
+          .then((response) => response.json())
+          .then((result) => {
+            setpreguntasAbiertas(result);
+            resolve(result);
+            })
+          .catch((error) => {
+            console.error(error);
+            reject(error);
+          });
       }),
       {
         success: "Success",
@@ -234,7 +240,7 @@ export function ExamGenerator() {
     <div
       className={`exam-generator-container`}
       onDragOver={(e) => e.preventDefault()}
-      style={{ minHeight: '100vh'}}
+      style={{ minHeight: "100vh" }}
     >
       {/* Ramon: Aqui lw cambie el tag de div a header, solo para que sea mas facil de entender*/}
       <header className="espacio-texto">
@@ -265,7 +271,7 @@ export function ExamGenerator() {
           }
         }}
       />
-     
+
       {!(loading || resultMapaMental || questions || preguntasAbiertas) && (
         <>
           {/* 
@@ -398,11 +404,22 @@ export function ExamGenerator() {
           {preguntasAbiertas?.map((question, index) => {
             return (
               <div id="abiertas" key={index}>
-                <h4 style={{ marginTop: "1%" }}>{question.content}</h4>
+                <h4 style={{ marginTop: "1%", fontSize: "2em" }}>
+                  {question.content}
+                </h4>
                 <textarea
                   id={"abierta " + index}
                   placeholder="Escribe aquí su respuesta"
                 ></textarea>
+                { question.answer && (
+                  <div>
+                <h4>Correcto: {question.correct ? "Correcto" : "Incorrecto"}</h4>
+                <h5>Respuesta: {question.chunk}</h5>
+                </div>
+                )}
+                {/*question.correct
+                question.chunk
+                question.reason*/}
               </div>
             );
           })}
