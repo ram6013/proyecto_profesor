@@ -11,6 +11,8 @@ export default function DialogPopUp({ numeroPreguntas, onInputChange, open, togg
         width: "100%",
         height: "100%",
         position: "absolute",
+        overflowY: "hidden",
+        minHeight: "100vh"
     }}
         hidden={!open}
         onClick={toggleDialog}>
