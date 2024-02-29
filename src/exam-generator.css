@@ -274,3 +274,11 @@ textarea {
   .botonesPreguntasAbiertas:hover {
     background-color: #0056b3;
   }
+
+
+  .buttonVolverMapaConceptual{
+        cursor: pointer;
+        color: white;
+        padding: 5%;
+        background-color: #000000;
+  }

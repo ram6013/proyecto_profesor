@@ -97,7 +97,7 @@ export function ExamGenerator() {
       }),
       {
         success: "Success",
-        loading: "Cargando archivo...",
+        loading: "Generando preguntas...",
         error: "Error",
       }
     );
@@ -136,7 +136,7 @@ export function ExamGenerator() {
       }),
       {
         success: "Success",
-        loading: "Cargando archivo...",
+        loading: "Corrigiendo examen...",
         error: "Error",
       }
     );
@@ -190,7 +190,7 @@ export function ExamGenerator() {
       }),
       {
         success: "Success",
-        loading: "Cargando archivo...",
+        loading: "Generando preguntas...",
         error: "Error",
       }
     );
@@ -311,22 +311,17 @@ export function ExamGenerator() {
             onClick={() => window.open(resultMapaMental, "_blank")}
           />
 
-          <button
-            style={{
-              cursor: "pointer",
-              backgroundColor: "Black",
-              color: "white",
-              padding: "5%",
-            }}
-            onClick={() => {
-              // Ramon: No olvides limpiar el resultado y asi no tienes que verificar if mapaMentalVisible
-              // Solamente si no esta loading, o si hay resultado
-              setResultMapaMental(null);
-            }}
-          >
-            Volver
-          </button>
-        </div>
+            <button
+            className="buttonVolverMapaConceptual"
+              onClick={() => {
+                // Ramon: No olvides limpiar el resultado y asi no tienes que verificar if mapaMentalVisible
+                // Solamente si no esta loading, o si hay resultado
+                setResultMapaMental(null);
+              }}
+            >
+              Volver
+            </button>
+          </div>
       )}
 
       {questions && (
