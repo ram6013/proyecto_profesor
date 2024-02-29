@@ -281,4 +281,5 @@ textarea {
         color: white;
         padding: 5%;
         background-color: #000000;
+        position: absolute;
   }

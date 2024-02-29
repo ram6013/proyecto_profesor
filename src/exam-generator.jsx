@@ -1,64 +1,50 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import axios, { isCancel } from "axios";
+import React, { useCallback, useRef, useState } from "react";
+import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
-// Ramon: por convencion las constantes se escriben en formato de SCREAMING_SNAKE_CASE
-// las variables y funciones en camelCase y las clases en PascalCase
 import UNIE_IMAGE from "./images/unieLogo.png";
 import FileUploader from "./FileUploader";
 import DialogPopUp from "./DialogPopUp";
 
-// Ramon: El css al final para que se aplique a librerias y tal que importemos
 import "./exam-generator.css";
 
 const BASE_URL = "http://localhost:8080/api";
 const QUESTION_LIMIT = 30;
 
-// Ramon: esta funcion no necesita ningun useState, por lo que se puede poner fuera
-
-//Pregunta: Esta función sirve para  coger el file que nosotros subimos y lo posteamos en el servidor no? es asincrona porque no bloqueamos la interfaz mientras este file se envía?
-async function apiRequest(file) {
+async function apiRequest(file, endpoint) {
   const formData = new FormData();
   formData.append("file", file);
 
   const config = {
-    method: "post",
-    url: `${BASE_URL}/summary`,
+    method: "POST",
+    url: `${BASE_URL}/${endpoint}`,
     data: formData,
   };
 
   return axios.request(config);
-  //Pregunta: Esto que devuelve? y para que se usa?
 }
 
 export function ExamGenerator() {
-  // Ramon: Como nos dan el selectedFile directamente, cambie el tener 2 useState a uno solo
-  // ya que selectedFile tiene el .name y no se necesita fileName
   const [selectedFile, setSelectedFile] = useState(null);
-  // Ramon: puse que sea 5 por defecto, como minimo
-  // No tendria sentido menos preguntas xd
   const [numberOfQuestions, setNumberOfQuestions] = useState(5);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [resultMapaMental, setResultMapaMental] = useState(null);
   const [questions, setQuestions] = useState(null);
-  // Ramon: Cambie el nombre a de loadingImage a loading, para utilizarlo para mas cosas
   const [loading, setLoading] = useState(false);
   const fieldSetRef = useRef();
 
   const [correctos, setCorrectos] = useState([]);
   const [incorrectos, setIncorrectos] = useState([]);
   const [tipoDeSolicitud, setTipoDeSolicitud] = useState(null);
-  const [preguntasAbiertas, setpreguntasAbiertas] = useState(null);
+  const [preguntasAbiertas, setPreguntasAbiertas] = useState(null);
 
-  //Pregunta: Esto se puede borrar no?
   function handleSubmit() {
     if (!selectedFile) {
-      // Ramon: Es una funcion, lo puedes llamar directamente!
       toast.error("No has subido ningún archivo");
       return;
     }
 
     setLoading(true);
-    const request = apiRequest(selectedFile)
+    const request = apiRequest(selectedFile, "summary")
       .then((response) => setResultMapaMental(response.data))
       .catch((error) => console.error("Error al generar la imagen:", error))
       .finally(() => setLoading(false));
@@ -76,78 +62,50 @@ export function ExamGenerator() {
       return;
     }
 
-    toast.promise(
-      new Promise(async (resolve, reject) => {
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-
-        const config = {
-          method: "post",
-          url: `${BASE_URL}/generate`,
-          data: formData,
-        };
-        const res = await axios.request(config);
-        if (res.data) {
-          setQuestions(res.data);
-          resolve(res.data);
-          setDialogOpen(false);
-        } else {
-          reject(res.data);
-        }
-      }),
-      {
-        success: "Success",
-        loading: "Generando preguntas...",
-        error: "Error",
-      }
-    );
+    toast.promise(apiRequest(selectedFile, "generate"), {
+      success: (res) => {
+        console.log(res.data);
+        setQuestions(res.data);
+        setDialogOpen(false);
+        return "Generado!";
+      },
+      loading: "Generando preguntas...",
+      error: "Error",
+    });
   }
   function handleRespuestasAbiertas() {
-    toast.promise(
-      new Promise(async (resolve, reject) => {
-        const divAbiertas = document.getElementById("abiertas");
-        divAbiertas.querySelectorAll("textarea").forEach((textarea, index) => {
-          const ix = preguntasAbiertas[index];
-          ix.answer = textarea.value;
-        });
+    document.querySelectorAll("textarea").forEach((textarea, index) => {
+      preguntasAbiertas[index].answer = textarea.value;
+    });
 
-        const myHeaders = new Headers();
-        myHeaders.append("Content-Type", "text/plain");
+    const myHeaders = new Headers();
+    myHeaders.append("Content-Type", "text/plain");
 
-        const raw = JSON.stringify(preguntasAbiertas);
+    const raw = JSON.stringify(preguntasAbiertas);
+    const requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow",
+    };
 
-        const requestOptions = {
-          method: "POST",
-          headers: myHeaders,
-          body: raw,
-          redirect: "follow",
-        };
+    const request = fetch(BASE_URL + "/correct", requestOptions)
+      .then((response) => response.json())
+      .then((result) => setPreguntasAbiertas(result))
+      .catch((error) => console.error(error));
 
-        fetch("http://localhost:8080/api/correct", requestOptions)
-          .then((response) => response.json())
-          .then((result) => {
-            setpreguntasAbiertas(result);
-            resolve(result);
-            })
-          .catch((error) => {
-            console.error(error);
-            reject(error);
-          });
-      }),
-      {
-        success: "Success",
-        loading: "Corrigiendo examen...",
-        error: "Error",
-      }
-    );
+    toast.promise(request, {
+      success: "Corregido!",
+      loading: "Corrigiendo examen...",
+      error: (error) => "Error: " + error,
+    });
   }
 
   function correct() {
     const correct = [];
     const incorrect = [];
     for (let i = 0; i < questions.length; i++) {
-      const fieldSet = document.getElementById("Eje " + i);
-      fieldSet
+      document
         .querySelectorAll(`input[name="option-${i}"]`)
         .forEach((input, index) => {
           if (input.checked) {
@@ -169,54 +127,28 @@ export function ExamGenerator() {
       return;
     }
 
-    toast.promise(
-      new Promise(async (resolve, reject) => {
-        const formData = new FormData();
-        formData.append("file", selectedFile);
-
-        const config = {
-          method: "post",
-          url: `${BASE_URL}/generate/open`,
-          data: formData,
-        };
-        const res = await axios.request(config);
-        if (res.data) {
-          setpreguntasAbiertas(res.data);
-          resolve(res.data);
-          setDialogOpen(false);
-        } else {
-          reject(res.data);
-        }
-      }),
-      {
-        success: "Success",
-        loading: "Generando preguntas...",
-        error: "Error",
-      }
-    );
+    toast.promise(apiRequest(selectedFile, "generate/open"), {
+      success: (res) => {
+        setPreguntasAbiertas(res.data);
+        setDialogOpen(false);
+        return "Success";
+      },
+      loading: "Generando preguntas...",
+      error: "Error",
+    });
   }
 
-  // Ramon: Este se llamaba valorInput, que no esta mal
-  // pero generalmente cosas como eventos, se les pone "on" al principio
   function onInputChange(event) {
     let value = event.target.value;
     if (isNaN(parseInt(value))) {
-      // Ramon: Un error aqui aprovechando que tenemos toast
       toast.error("El valor introducido no es un número!", { duration: 500 });
       return;
     }
-    // Ramon: el codigo complicado que mencione, esto resume el if else
     value = Math.max(5, Math.min(value, QUESTION_LIMIT));
     setNumberOfQuestions(value);
   }
 
-  // Ramon: aqui creo la funcion con el hook useCallback
-  // Para que cada vez que react refresque los componentes, no se vuelva a crear.
-  //Pregunta: Por que la importancia de esto?
   const toggleDialog = useCallback(() => setDialogOpen((d) => !d), []);
-
-  // Ramon: Aqui cree un array de botones, que es lo que se va a mostrar
-  // Y genero el html con codigo, para que sea mas facil
 
   const botones = [
     {
@@ -257,7 +189,6 @@ export function ExamGenerator() {
       <Toaster />
 
       <DialogPopUp
-        // Pregunta: No entiendo esto
         numeroPreguntas={numberOfQuestions}
         onInputChange={onInputChange}
         open={dialogOpen}
@@ -310,18 +241,25 @@ export function ExamGenerator() {
             /*Ramon: es solo abrir la imagen en otra ventana*/
             onClick={() => window.open(resultMapaMental, "_blank")}
           />
-
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              border: "10px solid black",
+            }}
+          >
             <button
-            className="buttonVolverMapaConceptual"
+              className="buttonVolverMapaConceptual"
               onClick={() => {
-                // Ramon: No olvides limpiar el resultado y asi no tienes que verificar if mapaMentalVisible
-                // Solamente si no esta loading, o si hay resultado
                 setResultMapaMental(null);
               }}
             >
               Volver
             </button>
           </div>
+        </div>
       )}
 
       {questions && (
@@ -361,7 +299,6 @@ export function ExamGenerator() {
                             style={{ cursor: "pointer" }}
                             type="radio"
                             value={option}
-                            //Agrego el index para que diferencie de cada pregunta porque solo se cambiaba de la pregunta 1.
                             id={"option-" + index + i}
                             name={"option-" + index}
                           ></input>
@@ -398,7 +335,7 @@ export function ExamGenerator() {
         <div className="contenedorPreguntasAbiertas">
           {preguntasAbiertas?.map((question, index) => {
             return (
-              <div id="abiertas" key={index}>
+              <div key={index}>
                 <h4 style={{ marginTop: "1%", fontSize: "2em" }}>
                   {question.content}
                 </h4>
@@ -406,11 +343,11 @@ export function ExamGenerator() {
                   id={"abierta " + index}
                   placeholder="Escribe aquí su respuesta"
                 ></textarea>
-                { question.answer && (
+                {question.answer && (
                   <div>
-                <h4>Correcto: {question.correct ? "Correcto" : "Incorrecto"}</h4>
-                <h5>Respuesta: {question.chunk}</h5>
-                </div>
+                    <h4>{question.correct ? "Correcto" : "Incorrecto"}</h4>
+                    <h5>Respuesta: {question.chunk}</h5>
+                  </div>
                 )}
                 {/*question.correct
                 question.chunk
@@ -429,7 +366,7 @@ export function ExamGenerator() {
             <button
               className="botonesPreguntasAbiertas"
               onClick={() => {
-                setpreguntasAbiertas(null);
+                setPreguntasAbiertas(null);
               }}
             >
               Volver

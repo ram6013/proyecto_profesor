@@ -1,10 +1,3 @@
-// Ramon: Aqui cree un componente para el dialogo, que es simplemente una funcion
-// que devuelve un JSX, asi no se mezcla con el resto del codigo
-// Luego lo puedes llamar como un tag <DialogPopUp />
-// y si quieres que tenga props, se los pasas como si fuera un tag normal
-// <DialogPopUp open={dialogOpen} />
-// Eso si en la declaracion de la funcion le pones (props) y luego usas props.open
-// funcion DialogPopUp(props) { return <dialog open={props.open} ... }
 export default function DialogPopUp({ numeroPreguntas, onInputChange, open, toggleDialog, handleSubmit  }) {
     return <div style={{
         backgroundColor: "rgba(0, 0, 0, 0.5)",
