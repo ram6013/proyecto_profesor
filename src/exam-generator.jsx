@@ -90,6 +90,7 @@ export function ExamGenerator() {
       redirect: "follow",
     };
 
+    setLoading(true);
     const request = fetch(BASE_URL + "/correct", requestOptions)
       .then((response) => response.json())
       .then((result) => setPreguntasAbiertas(result))
@@ -127,7 +128,7 @@ export function ExamGenerator() {
       toast.error("No se ha seleccionado ningun archivo");
       return;
     }
-
+    setLoading(true);
     toast.promise(apiRequest(selectedFile, "generate/open", numberOfQuestions), {
       success: (res) => {
         setPreguntasAbiertas(res.data);
@@ -230,11 +231,12 @@ export function ExamGenerator() {
       )}
       {loading && (
         <div>
-          <h3>Cargando imagen...</h3>
+          <h3>Procesando información...</h3>
         </div>
       )}
       {resultMapaMental && (
         <div>
+          {setLoading(false)}
           <img
             alt="Mapa mental"
             className="mapa-mental"
@@ -248,7 +250,6 @@ export function ExamGenerator() {
               flexDirection: "row",
               alignItems: "center",
               justifyContent: "center",
-              border: "10px solid black",
             }}
           >
             <button
@@ -265,6 +266,7 @@ export function ExamGenerator() {
 
       {questions && (
         <div>
+          {setLoading(false)}
           {questions?.map((question, index) => (
             <div style={{ marginTop: "5%", marginBottom: "5%" }}>
               <h4 className="content-tipo-test">
@@ -334,6 +336,7 @@ export function ExamGenerator() {
 
       {preguntasAbiertas && (
         <div className="contenedorPreguntasAbiertas">
+          {setLoading(false)}
           {preguntasAbiertas?.map((question, index) => {
             return (
               <div key={index}>
@@ -350,9 +353,6 @@ export function ExamGenerator() {
                     <h5>Respuesta: {question.chunk}</h5>
                   </div>
                 )}
-                {/*question.correct
-                question.chunk
-                question.reason*/}
               </div>
             );
           })}

@@ -32,7 +32,7 @@ export default function DialogPopUp({ numeroPreguntas, onInputChange, open, togg
                     onClick={handleSubmit}
                     className="botones-ocultos submit"
                 >
-                    submit
+                    Generar
                 </button>
             </div>
         </dialog>
