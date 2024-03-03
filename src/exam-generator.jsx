@@ -37,6 +37,7 @@ export function ExamGenerator() {
   const [incorrectos, setIncorrectos] = useState([]);
   const [tipoDeSolicitud, setTipoDeSolicitud] = useState(null);
   const [preguntasAbiertas, setPreguntasAbiertas] = useState(null);
+  const [corregido, setCorregido] = useState(false);
 
   function handleSubmit() {
     if (!selectedFile) {
@@ -62,12 +63,14 @@ export function ExamGenerator() {
       toast.error("Seleccione un archivo");
       return;
     }
-
+    setLoading(true);
+    setDialogOpen(false);
     toast.promise(apiRequest(selectedFile, "generate", numberOfQuestions), {
       success: (res) => {
         console.log(res.data);
         setQuestions(res.data);
         setDialogOpen(false);
+        setLoading(false);
         return "Generado!";
       },
       loading: "Generando preguntas...",
@@ -75,6 +78,7 @@ export function ExamGenerator() {
     });
   }
   function handleRespuestasAbiertas() {
+    document.getElementById("corregir_button").disabled = true;
     document.querySelectorAll("textarea").forEach((textarea, index) => {
       preguntasAbiertas[index].answer = textarea.value;
     });
@@ -90,11 +94,14 @@ export function ExamGenerator() {
       redirect: "follow",
     };
 
-    setLoading(true);
     const request = fetch(BASE_URL + "/correct", requestOptions)
       .then((response) => response.json())
       .then((result) => setPreguntasAbiertas(result))
-      .catch((error) => console.error(error));
+      .catch((error) => console.error(error))
+      .finally(() => {
+        setLoading(false);
+        setCorregido(true);
+      });
 
     toast.promise(request, {
       success: "Corregido!",
@@ -129,15 +136,22 @@ export function ExamGenerator() {
       return;
     }
     setLoading(true);
-    toast.promise(apiRequest(selectedFile, "generate/open", numberOfQuestions), {
-      success: (res) => {
-        setPreguntasAbiertas(res.data);
-        setDialogOpen(false);
-        return "Success";
-      },
-      loading: "Generando preguntas...",
-      error: "Error",
-    });
+    toggleDialog();
+    toast.promise(
+      apiRequest(selectedFile, "generate/open", numberOfQuestions),
+      {
+        success: (res) => {
+          setPreguntasAbiertas(res.data);
+          setDialogOpen(false);
+          setLoading(false);
+          setCorregido(false);
+          return "Success";
+        },
+
+        loading: "Generando preguntas...",
+        error: "Error",
+      }
+    );
   }
 
   function onInputChange(event) {
@@ -236,7 +250,6 @@ export function ExamGenerator() {
       )}
       {resultMapaMental && (
         <div>
-          {setLoading(false)}
           <img
             alt="Mapa mental"
             className="mapa-mental"
@@ -266,7 +279,6 @@ export function ExamGenerator() {
 
       {questions && (
         <div>
-          {setLoading(false)}
           {questions?.map((question, index) => (
             <div style={{ marginTop: "5%", marginBottom: "5%" }}>
               <h4 className="content-tipo-test">
@@ -336,20 +348,32 @@ export function ExamGenerator() {
 
       {preguntasAbiertas && (
         <div className="contenedorPreguntasAbiertas">
-          {setLoading(false)}
           {preguntasAbiertas?.map((question, index) => {
+            let border = "black";
+            if (corregido) {
+              if (question.correct) {
+                border = "green";
+              } else {
+                border = "red";
+              }
+            }
+
             return (
               <div key={index}>
                 <h4 style={{ marginTop: "1%", fontSize: "2em" }}>
                   {question.content}
                 </h4>
                 <textarea
+                  className="textarea"
+                  style={{ borderColor: border }}
                   id={"abierta " + index}
                   placeholder="Escribe aquí su respuesta"
                 ></textarea>
                 {question.answer && (
                   <div>
-                    <h4>{question.correct ? "Correcto" : "Incorrecto"}</h4>
+                    <h4 style={{ color: border }}>
+                      {question.correct ? "Correcto" : "Incorrecto"}
+                    </h4>
                     <h5>Respuesta: {question.chunk}</h5>
                   </div>
                 )}
@@ -374,6 +398,7 @@ export function ExamGenerator() {
             </button>
             <button
               className="botonesPreguntasAbiertas"
+              id="corregir_button"
               onClick={handleRespuestasAbiertas}
             >
               Corregir
