@@ -78,14 +78,16 @@ export function ExamGenerator() {
     });
   }
   function handleRespuestasAbiertas() {
-    document.getElementById("corregir_button").disabled = true;
+    setLoading(true);
+    if (loading === true){toast.error("Error, todavía esta corrigiendo"); return;}
     document.querySelectorAll("textarea").forEach((textarea, index) => {
+      if (!textarea.value){textarea.value= "No se ha contestado"}
       preguntasAbiertas[index].answer = textarea.value;
     });
 
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "text/plain");
-
+ 
     const raw = JSON.stringify(preguntasAbiertas);
     const requestOptions = {
       method: "POST",
