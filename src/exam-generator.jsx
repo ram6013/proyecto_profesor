@@ -38,123 +38,139 @@ export function ExamGenerator() {
   const [tipoDeSolicitud, setTipoDeSolicitud] = useState(null);
   const [questionsOpen, setQuestionsOpen] = useState(null);
   const [corregido, setCorregido] = useState(false);
+}
+function compareRandom(a, b) {
+  return Math.random() - 0.5;
+}
 
-  function handleSubmit() {
-    if (!selectedFile) {
-      toast.error("No has subido ningún archivo");
-      return;
+function handleSubmit() {
+  if (!selectedFile) {
+    toast.error("No has subido ningún archivo");
+    return;
+  }
+
+  setLoading(true);
+  const request = apiRequest(selectedFile, "summary")
+    .then((response) => setResultMapaMental(response.data))
+    .catch((error) => console.error("Error al generar la imagen:", error))
+    .finally(() => setLoading(false));
+
+  toast.promise(request, {
+    loading: "Generando imagen...",
+    success: "Imagen generada correctamente!",
+    error: () => {
+      setLoading(false);
+      ("Error al generar la imagen.");
+    },
+  });
+}
+
+async function handleTipoTestSubmit() {
+  if (!selectedFile) {
+    toast.error("Seleccione un archivo");
+    return;
+  }
+  setLoading(true);
+  setDialogOpen(false);
+  toast.promise(apiRequest(selectedFile, "generate", numberOfQuestions), {
+    success: (res) => {
+      console.log(res.data);
+      setQuestions(res.data);
+      questions.sort(compareRandom);
+      setDialogOpen(false);
+      setLoading(false);
+      return "Generado!";
+    },
+    loading: "Generando preguntas...",
+    error: () => {
+      setLoading(false);
+      return "Error";
+    },
+  });
+}
+function handleRespuestasAbiertas() {
+  setLoading(true);
+  if (loading === true) {
+    toast.error("Error, todavía esta corrigiendo");
+    return;
+  }
+  document.querySelectorAll("textarea").forEach((textarea, index) => {
+    if (!textarea.value) {
+      textarea.value = "No se ha contestado";
     }
+    questionsOpen[index].answer = textarea.value;
+  });
 
-    setLoading(true);
-    const request = apiRequest(selectedFile, "summary")
-      .then((response) => setResultMapaMental(response.data))
-      .catch((error) => console.error("Error al generar la imagen:", error))
-      .finally(() => setLoading(false));
+  const myHeaders = new Headers();
+  myHeaders.append("Content-Type", "text/plain");
 
-    toast.promise(request, {
-      loading: "Generando imagen...",
-      success: "Imagen generada correctamente!",
-      error: "Error al generar la imagen.",
-    });
-  }
+  const raw = JSON.stringify(questionsOpen);
+  const requestOptions = {
+    method: "POST",
+    headers: myHeaders,
+    body: raw,
+    redirect: "follow",
+  };
 
-  async function handleTipoTestSubmit() {
-    if (!selectedFile) {
-      toast.error("Seleccione un archivo");
-      return;
-    }
-    setLoading(true);
-    setDialogOpen(false);
-    toast.promise(apiRequest(selectedFile, "generate", numberOfQuestions), {
-      success: (res) => {
-        console.log(res.data);
-        setQuestions(res.data);
-        setDialogOpen(false);
-        setLoading(false);
-        return "Generado!";
-      },
-      loading: "Generando preguntas...",
-      error: "Error",
-    });
-  }
-  function handleRespuestasAbiertas() {
-    setLoading(true);
-    if (loading === true){toast.error("Error, todavía esta corrigiendo"); return;}
-    document.querySelectorAll("textarea").forEach((textarea, index) => {
-      if (!textarea.value){textarea.value= "No se ha contestado"}
-      questionsOpen[index].answer = textarea.value;
+  const request = fetch(BASE_URL + "/correct", requestOptions)
+    .then((response) => response.json())
+    .then((result) => setQuestionsOpen(result))
+    .catch((error) => console.error(error))
+    .finally(() => {
+      setLoading(false);
+      setCorregido(true);
     });
 
-    const myHeaders = new Headers();
-    myHeaders.append("Content-Type", "text/plain");
- 
-    const raw = JSON.stringify(questionsOpen);
-    const requestOptions = {
-      method: "POST",
-      headers: myHeaders,
-      body: raw,
-      redirect: "follow",
-    };
+  toast.promise(request, {
+    success: "Corregido!",
+    loading: "Corrigiendo examen...",
+    error: (error) => "Error: " + error,
+  });
+}
 
-    const request = fetch(BASE_URL + "/correct", requestOptions)
-      .then((response) => response.json())
-      .then((result) => setQuestionsOpen(result))
-      .catch((error) => console.error(error))
-      .finally(() => {
-        setLoading(false);
-        setCorregido(true);
-      });
-
-    toast.promise(request, {
-      success: "Corregido!",
-      loading: "Corrigiendo examen...",
-      error: (error) => "Error: " + error,
-    });
-  }
-
-  function correct() {
-    const correct = [];
-    const incorrect = [];
-    for (let i = 0; i < questions?.length; i++) {
-      document
-        .querySelectorAll(`input[name="option-${i}"]`)
-        .forEach((input, index) => {
-          if (input.checked) {
-            const q1 = questions[i];
-            if (q1.answer === index) {
-              correct.push(input.value);
-            } else {
-              incorrect.push(input.value);
-            }
+function correct() {
+  const correct = [];
+  const incorrect = [];
+  for (let i = 0; i < questions?.length; i++) {
+    document
+      .querySelectorAll(`input[name="option-${i}"]`)
+      .forEach((input, index) => {
+        if (input.checked) {
+          const q1 = questions[i];
+          if (q1.answer === index) {
+            correct.push(input.value);
+          } else {
+            incorrect.push(input.value);
           }
-        });
-    }
-    setCorrectos(correct);
-    setIncorrectos(incorrect);
+        }
+      });
   }
-  function handlePreguntasAbiertas() {
-    if (!selectedFile) {
-      toast.error("No se ha seleccionado ningun archivo");
-      return;
-    }
-    setLoading(true);
-    toggleDialog();
-    toast.promise(
-      apiRequest(selectedFile, "generate/open", numberOfQuestions),
-      {
-        success: (res) => {
-          setQuestionsOpen(res.data);
-          setDialogOpen(false);
-          setLoading(false);
-          setCorregido(false);
-          return "Success";
-        },
+  setCorrectos(correct);
+  setIncorrectos(incorrect);
+}
+function handlePreguntasAbiertas() {
+  if (!selectedFile) {
+    toast.error("No se ha seleccionado ningun archivo");
+    return;
+  }
+  setLoading(true);
+  toggleDialog();
+  toast.promise(apiRequest(selectedFile, "generate/open", numberOfQuestions), {
+    success: (res) => {
+      setQuestionsOpen(res.data);
+      questionsOpen.sort(compareRandom);
+      setDialogOpen(false);
+      setLoading(false);
+      setCorregido(false);
+      return "Success";
+    },
 
-        loading: "Generando preguntas...",
-        error: "Error",
-      }
-    );
-  }
+    loading: "Generando preguntas...",
+    error: () => {
+      setLoading(false);
+      return "Error";
+    },
+  });
 
   function onInputChange(event) {
     let value = event.target.value;
@@ -369,7 +385,7 @@ export function ExamGenerator() {
                   className="textarea"
                   style={{ borderColor: border }}
                   id={"abierta " + index}
-                  placeholder="Escribe aquí su respuesta" 
+                  placeholder="Escribe aquí su respuesta"
                 ></textarea>
                 {question.answer && (
                   <div>
