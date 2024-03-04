@@ -36,7 +36,7 @@ export function ExamGenerator() {
   const [correctos, setCorrectos] = useState([]);
   const [incorrectos, setIncorrectos] = useState([]);
   const [tipoDeSolicitud, setTipoDeSolicitud] = useState(null);
-  const [preguntasAbiertas, setPreguntasAbiertas] = useState(null);
+  const [questionsOpen, setQuestionsOpen] = useState(null);
   const [corregido, setCorregido] = useState(false);
 
   function handleSubmit() {
@@ -82,13 +82,13 @@ export function ExamGenerator() {
     if (loading === true){toast.error("Error, todavía esta corrigiendo"); return;}
     document.querySelectorAll("textarea").forEach((textarea, index) => {
       if (!textarea.value){textarea.value= "No se ha contestado"}
-      preguntasAbiertas[index].answer = textarea.value;
+      questionsOpen[index].answer = textarea.value;
     });
 
     const myHeaders = new Headers();
     myHeaders.append("Content-Type", "text/plain");
  
-    const raw = JSON.stringify(preguntasAbiertas);
+    const raw = JSON.stringify(questionsOpen);
     const requestOptions = {
       method: "POST",
       headers: myHeaders,
@@ -98,7 +98,7 @@ export function ExamGenerator() {
 
     const request = fetch(BASE_URL + "/correct", requestOptions)
       .then((response) => response.json())
-      .then((result) => setPreguntasAbiertas(result))
+      .then((result) => setQuestionsOpen(result))
       .catch((error) => console.error(error))
       .finally(() => {
         setLoading(false);
@@ -115,7 +115,7 @@ export function ExamGenerator() {
   function correct() {
     const correct = [];
     const incorrect = [];
-    for (let i = 0; i < questions.length; i++) {
+    for (let i = 0; i < questions?.length; i++) {
       document
         .querySelectorAll(`input[name="option-${i}"]`)
         .forEach((input, index) => {
@@ -143,7 +143,7 @@ export function ExamGenerator() {
       apiRequest(selectedFile, "generate/open", numberOfQuestions),
       {
         success: (res) => {
-          setPreguntasAbiertas(res.data);
+          setQuestionsOpen(res.data);
           setDialogOpen(false);
           setLoading(false);
           setCorregido(false);
@@ -221,7 +221,7 @@ export function ExamGenerator() {
         }}
       />
 
-      {!(loading || resultMapaMental || questions || preguntasAbiertas) && (
+      {!(loading || resultMapaMental || questions || questionsOpen) && (
         <>
           {/* 
             Ramon: Este title es el nombre que se muestra en la pestaña del navegador
@@ -281,7 +281,7 @@ export function ExamGenerator() {
 
       {questions && (
         <div>
-          {questions?.map((question, index) => (
+          {questions?.slice(0, numberOfQuestions).map((question, index) => (
             <div style={{ marginTop: "5%", marginBottom: "5%" }}>
               <h4 className="content-tipo-test">
                 {index + 1}. {question.content}
@@ -348,9 +348,9 @@ export function ExamGenerator() {
         </div>
       )}
 
-      {preguntasAbiertas && (
+      {questionsOpen && (
         <div className="contenedorPreguntasAbiertas">
-          {preguntasAbiertas?.map((question, index) => {
+          {questionsOpen?.slice(0, numberOfQuestions).map((question, index) => {
             let border = "black";
             if (corregido) {
               if (question.correct) {
@@ -369,7 +369,7 @@ export function ExamGenerator() {
                   className="textarea"
                   style={{ borderColor: border }}
                   id={"abierta " + index}
-                  placeholder="Escribe aquí su respuesta"
+                  placeholder="Escribe aquí su respuesta" 
                 ></textarea>
                 {question.answer && (
                   <div>
@@ -393,7 +393,7 @@ export function ExamGenerator() {
             <button
               className="botonesPreguntasAbiertas"
               onClick={() => {
-                setPreguntasAbiertas(null);
+                setQuestionsOpen(null);
               }}
             >
               Volver
