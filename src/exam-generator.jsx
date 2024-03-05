@@ -80,9 +80,10 @@ export function ExamGenerator() {
                 return "Generado!";
             },
             loading: "Generando preguntas...",
-            error: () => {
+            error: (error) => {
                 setLoading(false);
-                return "Error";
+                console.error(error);
+                return "Error: " + error;
             },
         });
     }
@@ -155,18 +156,17 @@ export function ExamGenerator() {
         toggleDialog();
         toast.promise(apiRequest(selectedFile, "generate/open", numberOfQuestions), {
             success: (res) => {
-                setQuestionsOpen(res.data);
-                questionsOpen.sort(compareRandom);
+                setQuestionsOpen(res.data.sort(compareRandom));
                 setDialogOpen(false);
                 setLoading(false);
                 setCorregido(false);
                 return "Success";
             },
-
             loading: "Generando preguntas...",
-            error: () => {
+            error: (error) => {
                 setLoading(false);
-                return "Error";
+                console.error(error);
+                return "Error: " + error;
             },
         });
     }
@@ -353,6 +353,8 @@ export function ExamGenerator() {
                         className="button-tipo-test"
                         onClick={() => {
                             setQuestions(null);
+                            setCorrectos([]);
+                            setIncorrectos([]);
                         }}
                     >
                         Volver
@@ -386,7 +388,7 @@ export function ExamGenerator() {
                                     id={"abierta " + index}
                                     placeholder="Escribe aquí su respuesta"
                                 ></textarea>
-                                {question.answer && (
+                                {question.answer && !loading && (
                                     <div>
                                         <h4 style={{ color: border }}>
                                             {question.correct ? "Correcto" : "Incorrecto"}
@@ -409,6 +411,7 @@ export function ExamGenerator() {
                             className="botonesPreguntasAbiertas"
                             onClick={() => {
                                 setQuestionsOpen(null);
+                                setCorregido(false);
                             }}
                         >
                             Volver
